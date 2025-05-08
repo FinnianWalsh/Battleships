@@ -1,0 +1,3 @@
+ALPHA_BASE = ord('A') - 1
+
+MAX_NAME_LENGTH = 10

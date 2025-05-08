@@ -45,12 +45,14 @@ class Grid:
 
         bottom_offset = (GRID_Y - 1) * GRID_X
 
+        x_sub1 = GRID_X - 1
+
         assign(0, below=True, right=True)  # top left
-        assign(GRID_X - 1, below=True, left=True)  # top right
+        assign(x_sub1, below=True, left=True)  # top right
         assign(bottom_offset, above=True, right=True)
         assign(GRID_Y * GRID_X - 1, above=True, left=True)  # bottom right
 
-        for i in range(1, GRID_X - 1):
+        for i in range(1, x_sub1):
             assign(i, below=True, left=True, right=True)
             assign(i + bottom_offset, above=True, left=True, right=True)
 
@@ -59,7 +61,7 @@ class Grid:
             assign(row_index, above=True, below=True, right=True)
             assign(row_index + GRID_X - 1, above=True, below=True, left=True)
 
-            for j in range(1, GRID_X - 1):
+            for j in range(1, x_sub1):
                 assign(row_index + j, above=True, below=True, left=True, right=True)
 
         # print(*(v for v in temp_1d_cells))

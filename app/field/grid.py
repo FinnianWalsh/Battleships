@@ -4,9 +4,8 @@ from functools import lru_cache
 from typing import Callable, List, Self
 
 from .cell import Cell, NullCell
-from ..constants.grid import GRID_X, GRID_Y
+from ..constants.grid import GRID_X, GRID_Y, GRID_COLOR
 from ..constants.misc import ALPHA_BASE
-from ..constants.color import GRID_COLOR
 from ..util import create_table, Number
 
 
@@ -26,14 +25,11 @@ class Grid:
             cell_row = []
 
             for j in range(1, GRID_X + 1):
-                position = f"{get_char(j)}{i}"
-                cell = Cell(label_row[j], position)
+                cell = Cell(label_row[j], (get_char(j), i))
                 cell_row.append(cell)
                 temp_1d_cells.append(cell)
 
             cells.append(cell_row)
-
-        first_row = cells[0]
 
         def assign(cell_index: int, above: bool = False, below: bool = False, left: bool = False, right: bool = False):
             target_cell = temp_1d_cells[cell_index]
@@ -115,11 +111,20 @@ class Grid:
 
 
 class GridData:
-    def __init__(self, grid_master: tk.Frame, grid1: Grid, grid2: Grid, self_label: tk.Label, turn_label: tk.Label,
-                 other_label: tk.Label):
+    def __init__(self, grid_master: tk.Frame, grid1: Grid, grid1_label: tk.Label,
+                 grid1_clockwise_rotation_label: tk.Label, grid1_anticlockwise_rotation_label: tk.Label, grid2: Grid,
+                 grid2_clockwise_rotation_label: tk.Label, grid2_anticlockwise_rotation_label: tk.Label,
+                 grid2_label: tk.Label, turn_label: tk.Label):
         self.grid_master = grid_master
         self.grid1 = grid1
         self.grid2 = grid2
-        self.self_label = self_label
+
+        self.grid1_label = grid1_label
+        self.grid1_clockwise_rotation_label = grid1_clockwise_rotation_label
+        self.grid1_anticlockwise_rotation_label = grid1_anticlockwise_rotation_label
+
+        self.grid2_label = grid2_label
+        self.grid2_clockwise_rotation_label = grid2_clockwise_rotation_label
+        self.grid2_anticlockwise_rotation_label = grid2_anticlockwise_rotation_label
+
         self.turn_label = turn_label
-        self.other_label = other_label

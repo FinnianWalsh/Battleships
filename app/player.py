@@ -1,10 +1,14 @@
 from typing import Any, Optional
 
+
 class Player:
+    instances = 0
+
     def __init__(self, name: Optional[str] = None):
         assign = super().__setattr__
         assign("name", name)
-        assign("guessed_cells", set[str]())
+        Player.instances += 1
+        assign("instance", Player.instances)
 
     def __getattribute__(self, item: str) -> Any:
         value = object.__getattribute__(self, item)

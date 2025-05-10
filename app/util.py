@@ -6,6 +6,7 @@ Number = Union[int, float]
 
 OptSelf = Optional[Self]
 
+
 def get_bool(prompt: str) -> bool:
     while True:
         response = input(prompt).lower()

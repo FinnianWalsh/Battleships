@@ -4,21 +4,29 @@ from typing import Set
 
 from .field.cell import Cell
 
-class Direction(Enum):
-    UP = auto()
-    DOWN = auto()
-    LEFT = auto()
-    RIGHT = auto()
 
+
+class Direction(Enum):
+    def _generate_next_value_(name, start, count, last_values): # noqa or
+        return count + 1
+    none = auto()
+    above = auto()
+    right = auto()
+    below = auto()
+    left = auto()
 
 class Ship(ABC):
     @abstractmethod
     def __init__(self, name: str, base: Cell, direction: Direction):
         self._name = name
-        self._length = next(item["length"] for item in SHIP_SETUP if item["name"] == name)
 
-        assert self._length is int, "Expected length to be int"
-        assert self._length >= 1, "Expected length to be at least 1"
+        for item in SHIP_SETUP:
+            if item["class"].__name__ == name:
+                self._length = item["length"]
+                self._color = item["color"]
+                break
+        else:
+            raise ValueError(f"No length property found for {name}")
 
         self._base = base
         self._direction = direction
@@ -31,6 +39,10 @@ class Ship(ABC):
     @property
     def length(self) -> int:
         return self._length
+
+    @property
+    def color(self) -> str:
+        return self._color
 
     @property
     def base(self) -> Cell:
@@ -67,8 +79,8 @@ class Destroyer(Ship):
 
 SHIP_SETUP = [
     {"class": Carrier, "length": 5, "color": "#000022"},
-    {"class": Battleship, "length": 4, "color": "101010"},
+    {"class": Battleship, "length": 4, "color": "#101010"},
     {"class": Cruiser, "length": 3, "color": "#636b2f"},
-    {"class": Submarine, "length": 3, "color": "#050505"},
+    {"class": Submarine, "length": 3, "color": "#181818"},
     {"class": Destroyer, "length": 2, "color": "#ffa500"}
 ]

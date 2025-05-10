@@ -1,1 +1,2 @@
 # Battleships
+A battleships game

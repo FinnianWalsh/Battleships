@@ -3,16 +3,15 @@ import tkinter as tk
 import tkinter.font as tk_font
 
 from .constants import (
-    color as color_consts,
     grid as grid_consts,
     misc as misc_consts,
     root as root_consts,
     rules as rules_consts
 )
-from .field.grid import Grid, GridData
-from .field.cell import Cell
+from .constants.root import ROOT_BACKGROUND_COLOR
+from .field import Grid, GridData, Cell
 from .player import Player
-from .ship import Direction
+from .ship import Ship, Direction
 from .util import create_bar, create_table, hex_color_mut, Number, ratio_place
 
 from enum import Enum
@@ -22,8 +21,7 @@ from typing import Callable
 
 class Game:
     def __init__(self, root_width: Number = root_consts.DEFAULT_ROOT_WIDTH,
-                 root_height: Number = root_consts.DEFAULT_ROOT_HEIGHT,
-                 background_color: str = color_consts.DEFAULT_BACKGROUND_COLOR):
+                 root_height: Number = root_consts.DEFAULT_ROOT_HEIGHT):
         self.player1 = Player()
         self.player2 = Player()
 
@@ -33,11 +31,11 @@ class Game:
         self.root_width = root_width
         self.root_height = root_height
         self.root_size = f"{root_width}x{root_height}"
-        self.background_color = background_color
+        self.background_color = ROOT_BACKGROUND_COLOR
 
         root.title("Battleships")
         root.geometry(self.root_size)
-        root.config(bg=background_color)
+        root.config(bg=self.background_color)
         root.resizable(False, False)
 
         self.turn = self.player1
@@ -85,8 +83,7 @@ class Game:
         relative_rules_bar_height = 4 / self.root_height
 
         table_contents, row_height = create_table(rules_table, table_columns, table_rows, [],
-                                                  [0, relative_rules_bar_height * 5],
-                                                  bg=color_consts.DEFAULT_BACKGROUND_COLOR,
+                                                  [0, relative_rules_bar_height * 5], bg=self.background_color,
                                                   font=tk_font.Font(family="Helvetica", size=14), fg="#ffffff")
 
         first_row = table_contents[0]
@@ -279,7 +276,7 @@ class Game:
             sleep(warning_duration)
 
             if warning_time == last_warning:
-                warning_label.after(0, lambda _: warning_label.config(text=""), None)
+                warning_label.after(0, lambda: warning_label.config(text=""))  # type: ignore[arg-type]
 
         def warn(warning: str):
             nonlocal last_warning
@@ -295,13 +292,13 @@ class Game:
             sleep(delay)
 
             if not has_started:
-                start_btn.after(0, lambda _: start_btn.config(text="Start"), None)
+                start_btn.after(0, lambda _: start_btn.config(text="Start"))  # type: ignore[arg-type]
 
         def check_confirmation():
             start_btn.config(text="Confirm")
             threading.Thread(target=reset_text, daemon=True).start()
 
-        def on_start(_):
+        def on_start(_: tk.Event):
             nonlocal has_started
 
             if has_started:
@@ -316,7 +313,7 @@ class Game:
                     menu.place_forget()
                     self.player1.name = player1_entry.get()
                     self.player2.name = "Computer"
-                    self.play_pvc()
+                    self.pvc_ship_placement()
                 else:
                     check_confirmation()
             elif selected_mode == options.PVP:
@@ -327,7 +324,7 @@ class Game:
                     menu.place_forget()
                     self.player1.name = player1_entry.get()
                     self.player2.name = player2_entry.get()
-                    self.play_pvp()
+                    self.pvp_ship_placement()
                 else:
                     check_confirmation()
 
@@ -342,7 +339,7 @@ class Game:
     def place_menu(self):
         self.menu.place(relx=0, rely=0, relwidth=1.0, relheight=1.0)
 
-    def create_player_grids(self) -> (tk.Frame, tk.Label, tk.Label, tk.Label):
+    def create_player_grids(self) -> GridData:
         bg_color: str = self.background_color
 
         grid_master = tk.Frame(self.root, bg=bg_color)
@@ -359,21 +356,43 @@ class Game:
 
         turn_label.place(relwidth=1.0, relheight=grid_consts.RELATIVE_TURN_LABEL_HEIGHT, relx=0.5, rely=0, anchor="n")
 
-        self_label = tk.Label(grid_master, text="Your field", **grid_label_kwargs)
-        other_label = tk.Label(grid_master, text="Other field", **grid_label_kwargs)
+        rotation_label_ratio_placement_kwargs = {"parent_width": self.root_width,
+                                                 "parent_height": self.root_height,
+                                                 "relwidth": grid_consts.RELATIVE_ROTATION_LABEL_SIZE,
+                                                 "relheight": grid_consts.RELATIVE_ROTATION_LABEL_SIZE}
 
-        self_label.place(relwidth=1.0, relheight=grid_label_height, relx=0.5,
-                         rely=grid_consts.RELATIVE_TURN_LABEL_HEIGHT, anchor="n")
+        grid1_label = tk.Label(grid_master, text=f"Player1's grid", **grid_label_kwargs)
+        grid1_clockwise_rotation_label = tk.Label(grid_master, **grid_label_kwargs)
+        grid1_anticlockwise_rotation_label = tk.Label(grid_master, **grid_label_kwargs)
+
+        grid1_label_rely = grid_consts.RELATIVE_TURN_LABEL_HEIGHT
+
+        grid1_label.place(relwidth=1.0, relheight=grid_label_height, relx=0.5,
+                          rely=grid1_label_rely, anchor="n")
+
+        ratio_place(grid1_anticlockwise_rotation_label, **rotation_label_ratio_placement_kwargs, relx=1,
+                    rely=grid1_label_rely + grid_label_height / 2, anchor="e")
+        ratio_place(grid1_clockwise_rotation_label, **rotation_label_ratio_placement_kwargs,
+                    rely=grid1_label_rely + grid_label_height / 2, anchor="w")
+
+        grid2_label = tk.Label(grid_master, text="Player2's grid", **grid_label_kwargs)
+        grid2_clockwise_rotation_label = tk.Label(grid_master, **grid_label_kwargs)
+        grid2_anticlockwise_rotation_label = tk.Label(grid_master, **grid_label_kwargs)
+
+        grid2_label_rely = grid_consts.RELATIVE_TURN_LABEL_HEIGHT + grid_label_height + grid_consts.RELATIVE_GRID_HEIGHT
+
+        grid2_label.place(relwidth=1.0, relheight=grid_label_height, relx=0.5, rely=grid2_label_rely, anchor="n")
+
+        ratio_place(grid2_anticlockwise_rotation_label, **rotation_label_ratio_placement_kwargs,
+                    relx=1.0, rely=grid2_label_rely + grid_label_height / 2, anchor="e")
+        ratio_place(grid2_clockwise_rotation_label, **rotation_label_ratio_placement_kwargs,
+                    rely=grid2_label_rely + grid_label_height / 2, anchor="w")
 
         grid1 = Grid.create(self.root_width, self.root_height, grid_master, bg=grid_color)
 
         ratio_place(grid1.frame, self.root_width, self.root_height, grid_consts.RELATIVE_GRID_WIDTH,
                     grid_consts.RELATIVE_GRID_HEIGHT, anchor="n", relx=0.5,
                     rely=grid_consts.RELATIVE_TURN_LABEL_HEIGHT + grid_label_height)
-
-        other_label.place(relwidth=1.0, relheight=grid_label_height, relx=0.5,
-                          rely=grid_consts.RELATIVE_TURN_LABEL_HEIGHT + grid_label_height + grid_consts.RELATIVE_GRID_HEIGHT,
-                          anchor="n")
 
         grid2 = Grid.create(self.root_width, self.root_height, grid_master, bg=grid_color)
 
@@ -382,49 +401,223 @@ class Game:
                     rely=grid_consts.RELATIVE_TURN_LABEL_HEIGHT + grid_label_height * 2 + grid_consts.RELATIVE_GRID_HEIGHT,
                     anchor="n")
 
-        return GridData(grid_master=grid_master, grid1=grid1, grid2=grid2, self_label=self_label,
-                        other_label=other_label, turn_label=turn_label)
+        return GridData(grid_master=grid_master, grid1=grid1, grid1_label=grid1_label,
+                        grid1_clockwise_rotation_label=grid1_clockwise_rotation_label,
+                        grid1_anticlockwise_rotation_label=grid1_anticlockwise_rotation_label, grid2=grid2,
+                        grid2_label=grid2_label, grid2_clockwise_rotation_label=grid2_clockwise_rotation_label,
+                        grid2_anticlockwise_rotation_label=grid2_anticlockwise_rotation_label, turn_label=turn_label)
 
-    def play_pvc(self):
-        print(f"Welcome, {self.player1.name}")
-        grid_data = self.grid_data
-        grid_data.turn_label.config(text=f"Place your ships")
-        grid_data.grid_master.place(relwidth=1, relheight=1)
-        player_grid = grid_data.grid1
-        computer_grid = grid_data.grid2
+    @staticmethod
+    def fill_direction_unchecked(cell, direction: str, length: int, color: str):
+        Game.fill_cell(cell, color)
 
-        current_direction = Direction.RIGHT
-        rendered_direction = None
-        current_ship_index = len(rules_consts.SHIP_SETUP) - 1
+        for i in range(1, length):
+            cell = getattr(cell, direction)
+            Game.fill_cell(cell, color)
+
+    @staticmethod
+    def check_occupied(cell: Cell, direction: str, length: int) -> bool:
+        if cell.ship: return True
+
+        for i in range(1, length):
+            cell = getattr(cell, direction)
+            if cell.ship: return True
+
+        return False
+
+    @staticmethod
+    def fill_above(cell: Cell, length: int, color: str) -> bool:
+        if length > cell.position_vector[1] or Game.check_occupied(cell, "above", length): return False
+        Game.fill_direction_unchecked(cell, "above", length, color)
+        return True
+
+    @staticmethod
+    def fill_below(cell: Cell, length: int, color: str) -> bool:
+        if length + cell.position_vector[1] - 1 > grid_consts.GRID_Y or Game.check_occupied(cell, "below", length):
+            return False
+        Game.fill_direction_unchecked(cell, "below", length, color)
+        return True
+
+    @staticmethod
+    def fill_left(cell: Cell, length: int, color: str) -> bool:
+        if (ord(cell.position_vector[0]) - misc_consts.ALPHA_BASE < length or
+                Game.check_occupied(cell, "left", length)): return False
+        Game.fill_direction_unchecked(cell, "left", length, color)
+        return True
+
+    @staticmethod
+    def fill_right(cell: Cell, length: int, color: str) -> bool:
+        if ord(cell.position_vector[0]) - ord('A') + length > grid_consts.GRID_X or Game.check_occupied(
+                cell, "right", length): return False
+        Game.fill_direction_unchecked(cell, "right", length, color)
+        return True
+
+    @staticmethod
+    def fill_cell(cell: Cell, color: str):
+        cell.label.config(bg=color)
+
+    def place_ships(self, grid: Grid, clockwise_rotation_label: tk.Label, anticlockwise_rotation_label: tk.Label,
+                    callback: Callable):
+        current_direction = Direction.left
+        current_ship_index = 0
         current_ship = rules_consts.SHIP_SETUP[current_ship_index]
-        current_ship_length = current_ship["length"]
-        current_ship_color = current_ship["color"]
+        current_ship_length, current_ship_color = current_ship["length"], current_ship["color"]
 
-        def next_ship():
-            nonlocal current_ship_index, current_ship, current_ship_length, current_ship_color
+        rendered_direction: Direction = Direction.none
+        rendered_length = 0
 
-            current_ship = rules_consts.SHIP_SETUP[current_ship_index := current_ship_index - 1]
+        def update_ship_refs():
+            nonlocal current_ship, current_ship_length, current_ship_color
+
+            current_ship = rules_consts.SHIP_SETUP[current_ship_index]
             current_ship_length, current_ship_color = current_ship["length"], current_ship["color"]
 
-        def render_ship(base: Cell):
-            base.label.config(bg=current_ship_color)
+        fill_functions = {Direction.above: Game.fill_above, Direction.below: Game.fill_below,
+                          Direction.left: Game.fill_left, Direction.right: Game.fill_right}
 
-        def unrender_ship(base: Cell):
-            base.label.config(bg=color_consts.GRID_COLOR)
+        def render_ship(cell: Cell):
+            nonlocal rendered_direction, rendered_length
+            direction, length = current_direction, current_ship_length
 
-        player_grid.cell_bind("<Enter>", render_ship)
-        player_grid.cell_bind("<Leave>", unrender_ship)
+            if fill_functions[direction](cell, length, current_ship_color):
+                rendered_direction = direction
+                rendered_length = length
+            else:
+                rendered_direction = direction.none
+                Game.fill_cell(cell, "#ff0000")
 
-        player_grid.cell_bind("<Button-1>", lambda cell: print(repr(cell)))
+        def unrender_ship(cell: Cell):
+            if rendered_direction == Direction.none:
+                if ship := cell.ship:
+                    Game.fill_cell(cell, ship.color)
+                else:
+                    Game.fill_cell(cell, grid_consts.GRID_COLOR)
+            else:
+                Game.fill_direction_unchecked(cell, rendered_direction.name, rendered_length, grid_consts.GRID_COLOR)
+
+        clockwise_rotation_label.config(text='⟳')
+        anticlockwise_rotation_label.config(text='⟲')
+
+        def clockwise_rotation(_=None):
+            nonlocal current_direction
+
+            if current_direction == Direction.left:
+                current_direction = Direction.above
+            else:
+                current_direction = Direction(current_direction.value + 1)
+
+        def anticlockwise_rotation(_=None):
+            nonlocal current_direction
+
+            if current_direction == Direction.above:
+                current_direction = Direction.left
+            else:
+                current_direction = Direction(current_direction.value - 1)
+
+        def place_ship(cell: Cell):
+            nonlocal rendered_direction, current_ship_index
+
+            if rendered_direction == Direction.none: return
+
+            ship: Ship = current_ship["class"](cell, rendered_direction)
+
+            cell.ship = ship
+
+            for i in range(1, rendered_length):
+                cell = getattr(cell, rendered_direction.name)
+                cell.ship = ship
+
+            rendered_direction = Direction.none
+
+            current_ship_index += 1
+
+            if current_ship_index < len(rules_consts.SHIP_SETUP):
+                update_ship_refs()
+            else:
+                clockwise_rotation_label.config(text="")
+                anticlockwise_rotation_label.config(text="")
+
+                clockwise_rotation_label.unbind("<Button-1>")
+                anticlockwise_rotation_label.unbind("<Button-1>")
+
+                grid.cell_unbind("<Enter>")
+                grid.cell_unbind("<Leave>")
+                grid.cell_unbind("<Button-1>")
+
+                self.root.after(0, callback)  # type: ignore[arg-type]
+
+        clockwise_rotation_label.bind("<Button-1>", clockwise_rotation)
+        anticlockwise_rotation_label.bind("<Button-1>", anticlockwise_rotation)
+
+        grid.cell_bind("<Enter>", render_ship)
+        grid.cell_bind("<Leave>", unrender_ship)
+        grid.cell_bind("<Button-1>", place_ship)
+
+    def pvc_computer_place_ships(self):
+        grid_data = self.grid_data
+
+        turn_label = grid_data.turn_label
+        base_text = "Computer's turn to place"
+        iterations = 4
+        max_periods = 3
+        pause_ms = 333
+
+        def load(i: int, iteration: int):
+            if iteration >= iterations: return
+
+            turn_label.config(text=f"{base_text}{'.' * i}")
+
+            if i == max_periods:
+                turn_label.after(pause_ms, load, 0, iteration + 1)
+            else:
+                turn_label.after(pause_ms, load, i + 1, iteration)
+
+        turn_label.after(0, load, 0, 0)
+
+    def pvc_ship_placement(self):
+        print(f"Welcome, {self.player1.name}")
+        grid_data = self.grid_data
+
+        grid_data.grid1_label.config(text="Your grid")
+        grid_data.grid2_label.config(text="Computer's grid")
+
+        grid_data.turn_label.config(text=f"Place your ships")
+        grid_data.grid_master.place(relwidth=1, relheight=1)
+
+        player_grid = grid_data.grid1
+
+        self.place_ships(player_grid, grid_data.grid1_clockwise_rotation_label,
+                         grid_data.grid1_anticlockwise_rotation_label, self.pvc_computer_place_ships)
+
+    def pvp_ship_placement(self):
+        grid_data = self.grid_data
+        grid_data.grid1_label.config(text=f"{self.player1.name}'s grid")
+        grid_data.grid2_label.config(text=f"{self.player2.name}'s grid")
+
+        self.pvp_player_place_ships(self.player1)
+        grid_data.grid_master.place(relwidth=1, relheight=1)
+
+    def pvp_player_place_ships(self, player: Player):
+        grid_data = self.grid_data
+        grid_data.turn_label.config(text=f"{player.name}'s turn to place")
+
+        grid_name = f"grid{player.instance}"
+
+        self.place_ships(getattr(grid_data, grid_name), getattr(grid_data, f"{grid_name}_clockwise_rotation_label"),
+                         getattr(grid_data, f"{grid_name}_anticlockwise_rotation_label"),
+                         self.play_pvp if player.instance == Player.instances else
+                         lambda: self.pvp_player_place_ships(getattr(self, f"player{player.instance + 1}")))
+
+    def play_pvc(self):
+        print(f"Playing {self.player1} vs computer")
 
     def play_pvp(self):
-        print(f"Welcome, {self.player1.name} and {self.player2.name}")
-        self.grid_data.turn_label.config(text=f"{self.turn.name}'s turn to place")
+        print(f"Player {self.player1} vs {self.player2}")
 
     def switch_grid(self):  # for pvp
         grid_data = self.grid_data
         grid_data.turn_label.config(text=f"{self.turn.name}'s turn")
-        grid_data.other_label.config(text=f"{self.other.name}'s field")
+        grid_data.grid2_label.config(text=f"{self.other.name}'s field")
 
     def start(self):
         self.place_menu()

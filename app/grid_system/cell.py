@@ -1,7 +1,8 @@
 import tkinter as tk
 from typing import Any, Tuple
 
-from ..util import OptSelf
+from app.constants.grid import GRID_COLOR, CELL_DESTROY_COLOR
+
 
 class NullCell:
     _instance = None
@@ -23,16 +24,16 @@ NullCell = NullCell()
 
 
 class Cell:
-    def __init__(self, label: tk.Label, position_vector: Tuple[str, int], above: OptSelf = None,
-                 below: OptSelf = None, left: OptSelf = None, right: OptSelf = None):
+    def __init__(self, label: tk.Label, position_vector: Tuple[str, int]):
         self.label = label
         self.position_vector = position_vector
         self.position = f"{position_vector[0]}{position_vector[1]}"
-        self.above = above
-        self.below = below
-        self.left = left
-        self.right = right
+        self.above = None
+        self.below = None
+        self.left = None
+        self.right = None
         self.ship = None
+        self.destroyed = False
 
     def __setattr__(self, name: str, value: Any):
         if getattr(self, name, None) is not None:
@@ -45,5 +46,15 @@ class Cell:
     def __repr__(self):
         return f"Cell(label={self.label}, position={self.position}, above={self.above}, below={self.below}, left={self.left}, right={self.right})"
 
+    def destroy(self, text=""):
+        object.__setattr__(self, "ship", None)
+        object.__setattr__(self, "destroyed", True)
+
+        (label := self.label).config(bg=CELL_DESTROY_COLOR)
+
+        if len(text):
+            label.config(bg=CELL_DESTROY_COLOR, fg="#ff0000", text=text)
+
     def reset(self):
         object.__setattr__(self, "ship", None)
+        self.label.config(bg=GRID_COLOR, fg="#ffffff", text="")

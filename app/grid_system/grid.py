@@ -1,12 +1,15 @@
 import tkinter as tk
-
-from functools import lru_cache
-from typing import Callable, List, Self
+from functools import partial
+from typing import Callable, List
 
 from .cell import Cell, NullCell
 from ..constants.grid import GRID_X, GRID_Y, GRID_COLOR
 from ..constants.misc import ALPHA_BASE
 from ..util import create_table, Number
+
+
+def get_char(num: int):
+    return chr(num + ALPHA_BASE)
 
 
 class Grid:
@@ -15,10 +18,6 @@ class Grid:
         self.labels = labels
 
         cells, temp_1d_cells = [], []
-
-        @lru_cache
-        def get_char(num: int):
-            return chr(num + ALPHA_BASE)
 
         for i in range(1, GRID_Y + 1):
             label_row = labels[i]
@@ -73,12 +72,12 @@ class Grid:
 
         return self.cells[i][j]
 
-    def cell_bind(self, event_sequence: str, function: Callable[[Cell], None]):
+    def cell_bind(self, event_sequence: str, function: Callable[[Cell, tk.Event], None]):
         for i in range(GRID_Y):
             row = self.cells[i]
 
             for cell in row:
-                cell.label.bind(event_sequence, lambda _, c=cell: function(c))
+                cell.label.bind(event_sequence, partial(function, cell))
 
     def cell_unbind(self, event_sequence: str):
         for i in range(GRID_Y):
@@ -87,17 +86,29 @@ class Grid:
             for cell in row:
                 cell.label.unbind(event_sequence)
 
+    def show_ships(self):
+        for row in self.cells:
+            for cell in row:
+                if ship := cell.ship:
+                    cell.label.config(bg=ship.color)
+
+    def hide_ships(self):
+        for row in self.cells:
+            for cell in row:
+                if cell.ship:
+                    cell.label.config(bg=GRID_COLOR)
+
     def place(self, *args, **kwargs):
         self.frame.place(*args, **kwargs)
 
     @classmethod
-    def create(cls, root_width: Number, root_height: Number, parent: tk.Widget, **kwargs) -> Self:
+    def create(cls, root_width: Number, root_height: Number, parent: tk.Widget, **kwargs) -> "Grid":
         frame = tk.Frame(parent, **kwargs)
 
         bar_thickness = 3
 
-        table, _ = create_table(frame, GRID_X + 1, GRID_Y + 1, [0] + [bar_thickness / root_width] * GRID_X,
-                                [0] + [bar_thickness / root_height] * GRID_Y, bg=GRID_COLOR, fg="#ffffff")
+        table = create_table(frame, GRID_X + 1, GRID_Y + 1, [0] + [bar_thickness / root_width] * GRID_X,
+                             [0] + [bar_thickness / root_height] * GRID_Y, bg=GRID_COLOR, fg="#ffffff")[0]
 
         first_column = table[0]
 
@@ -110,11 +121,11 @@ class Grid:
         return Grid(frame, table)
 
 
-class GridData:
+class GridReferences:
     def __init__(self, grid_master: tk.Frame, grid1: Grid, grid1_label: tk.Label,
                  grid1_clockwise_rotation_label: tk.Label, grid1_anticlockwise_rotation_label: tk.Label, grid2: Grid,
                  grid2_clockwise_rotation_label: tk.Label, grid2_anticlockwise_rotation_label: tk.Label,
-                 grid2_label: tk.Label, turn_label: tk.Label):
+                 grid2_label: tk.Label, top_bar: tk.Label):
         self.grid_master = grid_master
         self.grid1 = grid1
         self.grid2 = grid2
@@ -127,4 +138,4 @@ class GridData:
         self.grid2_clockwise_rotation_label = grid2_clockwise_rotation_label
         self.grid2_anticlockwise_rotation_label = grid2_anticlockwise_rotation_label
 
-        self.turn_label = turn_label
+        self.top_bar = top_bar

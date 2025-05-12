@@ -1,11 +1,8 @@
 import tkinter as tk
 
-from typing import Any, List, Optional, Self, Type, Union
+from typing import Any, List, Type, Union
 
 Number = Union[int, float]
-
-OptSelf = Optional[Self]
-
 
 def get_bool(prompt: str) -> bool:
     while True:
@@ -58,7 +55,7 @@ def create_table(frame: tk.Frame, columns: int, rows: int, relative_column_offse
 
         row_list.append(column_list)
 
-    return row_list, relative_row_height
+    return row_list, relative_column_width, relative_row_height
 
 
 def ratio_place(element: tk.Widget, parent_width: Number, parent_height: Number, relwidth: float,

@@ -2,18 +2,20 @@ from abc import ABC, abstractmethod
 from enum import auto, Enum
 from typing import Set
 
-from .field.cell import Cell
-
+from .constants.misc import SetupSize, SHIP_SETUP_SIZE
+from .grid_system.cell import Cell
 
 
 class Direction(Enum):
-    def _generate_next_value_(name, start, count, last_values): # noqa or
+    def _generate_next_value_(name, start, count, last_values):  # noqa or
         return count + 1
+
     none = auto()
     above = auto()
     right = auto()
     below = auto()
     left = auto()
+
 
 class Ship(ABC):
     @abstractmethod
@@ -77,10 +79,23 @@ class Destroyer(Ship):
     def __init__(self, base: Cell, direction: Direction): super().__init__("Destroyer", base, direction)
 
 
-SHIP_SETUP = [
-    {"class": Carrier, "length": 5, "color": "#000022"},
-    {"class": Battleship, "length": 4, "color": "#101010"},
-    {"class": Cruiser, "length": 3, "color": "#636b2f"},
-    {"class": Submarine, "length": 3, "color": "#181818"},
-    {"class": Destroyer, "length": 2, "color": "#ffa500"}
-]
+if SHIP_SETUP_SIZE == SetupSize.MINIMAL:
+    SHIP_SETUP = [
+        {"class": Destroyer, "length": 1, "color": "blue"}
+    ]
+elif SHIP_SETUP_SIZE == SetupSize.SMALL:
+    SHIP_SETUP = [
+        {"class": Cruiser, "length": 3, "color": "orange"},
+        {"class": Submarine, "length": 2, "color": "grey"},
+        {"class": Destroyer, "length": 2, "color": "blue"},
+    ]
+elif SHIP_SETUP_SIZE == SetupSize.NORMAL:
+    SHIP_SETUP = [
+        {"class": Carrier, "length": 5, "color": "#000022"},
+        {"class": Battleship, "length": 4, "color": "#101010"},
+        {"class": Cruiser, "length": 3, "color": "#636b2f"},
+        {"class": Submarine, "length": 3, "color": "#181818"},
+        {"class": Destroyer, "length": 2, "color": "#ffa500"},
+    ]
+elif SHIP_SETUP_SIZE == SetupSize.LARGE:
+    raise NotImplementedError("Large SetupSize is not yet supported.")

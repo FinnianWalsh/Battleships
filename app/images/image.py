@@ -1,8 +1,7 @@
 import os
 from tkinter import PhotoImage
 
-app_directory = os.path.dirname(__file__)
-images_directory = os.path.join(app_directory, "images")
+images_directory = os.path.dirname(__file__)
 
 images = {}
 

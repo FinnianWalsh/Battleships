@@ -22,3 +22,10 @@ class Player:
             object.__setattr__(self, key, value)
         else:
             raise AttributeError(f"{key} has already been initialized with {value}")
+
+    @classmethod
+    def from_other(cls, other: "Player") -> "Player":
+        player = object.__new__(cls)
+        player.instance = other.instance
+
+        return player

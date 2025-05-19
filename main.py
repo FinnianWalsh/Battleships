@@ -14,7 +14,7 @@ if __name__ == "__main__":
                 while fileInstance.readline():
                     total += 1
 
-    print(f"Total app lines in: {total}")
+    print(f"Total app lines in project: {total}")
 
     game = Game()
     game.start()

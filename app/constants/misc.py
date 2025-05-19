@@ -5,10 +5,10 @@ ALPHA_BASE = ord('A') - 1
 MAX_NAME_LENGTH = 10
 
 FILL_SYMBOLS = {
-    "above": '↑',
-    "right": '→',
-    "below": '↓',
-    "left": '←',
+    "above": '\u2191',
+    "right": '\u2192',
+    "below": '\u2193',
+    "left": '\u2190',
 }
 
 

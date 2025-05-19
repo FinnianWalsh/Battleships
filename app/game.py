@@ -1,6 +1,5 @@
 import tkinter as tk
 import tkinter.font as tk_font
-from functools import partial
 from typing import Callable
 
 from .constants import (

@@ -17,11 +17,10 @@ class Gamemode(Enum):
     PVC = auto()
 
 
-class Menu:
+class Menu(tk.Frame):
     def __init__(self, root: tk.Tk, root_width: Number, root_height: Number, pvc_callback: Callable[[str], None],
                  pvp_callback: Callable[[str, str], None]):
-        frame = tk.Frame(root, bg=ROOT_BACKGROUND_COLOR)
-        self.frame = frame
+        super().__init__(root, bg=ROOT_BACKGROUND_COLOR)
         self.pvc_callback, self.pvp_callback = pvc_callback, pvp_callback
 
         self.relative_rules_head_offset = 5 / root_height
@@ -40,19 +39,19 @@ class Menu:
         self.relative_start_btn_width = 80 / root_width
         self.relative_start_btn_height = 30 / root_height
 
-        self.rules_head = tk.Label(frame, text=RULES_HEAD)
+        self.rules_head = tk.Label(self, text=RULES_HEAD)
         self.rules_head.config(font=tk_font.Font(family="Helvetica", size=20, weight="bold"), fg="#ffffff",
                                bg=ROOT_BACKGROUND_COLOR)
         self.rules_head.place(relwidth=1.0, rely=self.relative_rules_head_offset,
                               relheight=self.relative_rules_head_size)
 
-        self.rules_label = tk.Label(frame, text=RULES_BODY, anchor="n", wraplength=root_width - 50,
+        self.rules_label = tk.Label(self, text=RULES_BODY, anchor="n", wraplength=root_width - 50,
                                     font=tk_font.Font(family="Helvetica", size=14), fg="#ffffff",
                                     bg=ROOT_BACKGROUND_COLOR)
         self.rules_label.place(relwidth=1.0, rely=self.relative_rules_label_offset,
                                relheight=self.relative_rules_label_height)
 
-        self.rules_table = tk.Frame(frame, bg=ROOT_BACKGROUND_COLOR)
+        self.rules_table = tk.Frame(self, bg=ROOT_BACKGROUND_COLOR)
 
         self.rules_table.place(relwidth=self.relative_rules_table_width,
                                relheight=self.relative_rules_table_height, relx=0.5,
@@ -101,7 +100,7 @@ class Menu:
         self.relative_entries_frame_width = 1 - 20 / root_width
         self.relative_entries_frame_height = 80 / root_height
 
-        mode_selection_frame = tk.Frame(frame, bg=MODE_SELECTION_COLOR_UNSELECTED)
+        mode_selection_frame = tk.Frame(self, bg=MODE_SELECTION_COLOR_UNSELECTED)
         mode_selection_frame.place(relwidth=self.relative_entries_frame_width,
                                    relheight=self.relative_mode_selection_height, relx=0.5,
                                    rely=self.relative_mode_selection_offset, anchor="n")
@@ -121,7 +120,7 @@ class Menu:
         self.pvp_btn.place(relwidth=MODE_BUTTON_WIDTH, relheight=MODE_BUTTON_HEIGHT, relx=0.5,
                            rely=MODE_HEADER_HEIGHT + MODE_BUTTON_HEIGHT, anchor="n")
 
-        entries_frame = tk.Frame(frame, bg=ROOT_BACKGROUND_COLOR)
+        entries_frame = tk.Frame(self, bg=ROOT_BACKGROUND_COLOR)
         entries_frame.place(relwidth=self.relative_entries_frame_width, relheight=self.relative_entries_frame_height,
                             relx=0.5,
                             rely=self.relative_entries_frame_offset, anchor="n")
@@ -148,13 +147,13 @@ class Menu:
         self.pvc_btn.bind("<Leave>", self.on_pvc_btn_leave)
         self.pvp_btn.bind("<Leave>", self.on_pvp_btn_leave)
 
-        self.start_btn = tk.Button(frame, text="Start", bg="#00ff00")
+        self.start_btn = tk.Button(self, text="Start", bg="#00ff00")
         self.start_btn.place(relwidth=self.relative_start_btn_width, relheight=self.relative_start_btn_height, relx=0.5,
                              rely=1 + self.relative_start_btn_offset, anchor="s")
 
         self.relative_warning_label_offset = self.relative_start_btn_offset * 2 - self.relative_start_btn_height
 
-        self.warning_label = tk.Label(frame, text="", bg=ROOT_BACKGROUND_COLOR, fg="#ff0000")
+        self.warning_label = tk.Label(self, text="", bg=ROOT_BACKGROUND_COLOR, fg="#ff0000")
         self.warning_label.place(relwidth=1.0, relheight=self.relative_start_btn_height, relx=0.5,
                                  rely=1 + self.relative_warning_label_offset, anchor="s")
 
@@ -193,7 +192,7 @@ class Menu:
         label.place_forget()
 
     def place(self):
-        self.frame.place(relx=0, rely=0, relwidth=1.0, relheight=1.0)
+        super().place(relx=0, rely=0, relwidth=1.0, relheight=1.0)
 
     def unselect_mode(self, btn: tk.Label):
         self.selected_mode = Gamemode.none
@@ -279,7 +278,7 @@ class Menu:
                 self.warn(warning)
             elif self.start_btn.cget("text") == "Confirm":
                 self.has_started = True
-                self.frame.place_forget()
+                self.place_forget()
                 self.pvc_callback(self.player1_entry.get())
                 # self.pvc_ship_placement_init()
             else:
@@ -289,7 +288,7 @@ class Menu:
                 self.warn(warning)
             elif self.start_btn.cget("text") == "Confirm":
                 self.has_started = True
-                self.frame.place_forget()
+                self.place_forget()
                 self.pvp_callback(self.player1_entry.get(), self.player2_entry.get())
                 # self.pvp_ship_placement_init()
             else:

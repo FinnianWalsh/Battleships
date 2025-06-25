@@ -14,28 +14,25 @@ from .player import Player
 from .util import hex_color_mut, Number, ratio_place
 
 
-class Game:
+class Game(tk.Tk):
     def __init__(self, root_width: Number = root_consts.DEFAULT_ROOT_WIDTH,
                  root_height: Number = root_consts.DEFAULT_ROOT_HEIGHT):
         self.player1 = Player()
         self.player2 = Player()
 
-        root = tk.Tk()
-        self.root = root
+        super().__init__()
 
         self.root_width = root_width
         self.root_height = root_height
-        self.root_size = f"{root_width}x{root_height}"
 
-        root.title("Battleships")
-        root.geometry(self.root_size)
-        root.config(bg=ROOT_BACKGROUND_COLOR)
-        root.resizable(False, False)
+        super().title("Battleships")
+        super().minsize(self.root_width, self.root_height)
+        super().config(bg=ROOT_BACKGROUND_COLOR)
 
         self.turn = self.player1
         self.grid_refs = self.create_player_grids()
 
-        self.menu = Menu(root, root_width, root_height, self.pvc_callback, self.pvp_callback)
+        self.menu = Menu(self, root_width, root_height, self.pvc_callback, self.pvp_callback)
 
     @staticmethod
     def game_over(other_grid: Grid) -> bool:
@@ -62,15 +59,15 @@ class Game:
     def pvc_callback(self, player_name: str):
         self.player1.name = player_name
         self.player2.name = "Computer"
-        self.root.after(0, self.pvc_ship_placement_init)  # type: ignore[arg-type]
+        super().after(0, self.pvc_ship_placement_init)  # type: ignore[arg-type]
 
     def pvp_callback(self, player1_name: str, player2_name: str):
         self.player1.name = player1_name
         self.player2.name = player2_name
-        self.root.after(0, self.pvp_ship_placement_init)  # type: ignore[arg-type]
+        super().after(0, self.pvp_ship_placement_init)  # type: ignore[arg-type]
 
     def create_player_grids(self) -> GridReferences:
-        grid_master = tk.Frame(self.root, bg=ROOT_BACKGROUND_COLOR)
+        grid_master = tk.Frame(self, bg=ROOT_BACKGROUND_COLOR)
 
         grid_label_height = (1 - (grid_consts.RELATIVE_GRID_HEIGHT * 2 + grid_consts.RELATIVE_TURN_LABEL_HEIGHT)) / 2
         grid_color = hex_color_mut(ROOT_BACKGROUND_COLOR, lambda n: n * 1.2)
@@ -253,9 +250,20 @@ class Game:
 
     def prompt_play_again(self):
         popup = tk.Toplevel()
-        popup.title("Play again?")
+        popup.title("Prompt")
+        popup.minsize(root_consts.POPUP_WIDTH, root_consts.POPUP_HEIGHT)
 
-        if False: self.restart()
+        prompt_label = tk.Label(popup, text="Play again?", bg=popup.cget("bg"), fg="#000000")
+        prompt_label.place(relwidth=0.6, relheight=0.2, relx=0.5, rely=0.1, anchor="center")
+
+        yes_button = tk.Label(popup, text="Yes", bg="#ffffff", fg="#000000")
+        no_button = tk.Label(popup, text="No", bg="#ffffff", fg="#000000")
+
+        yes_button.place(relwidth=0.6, relheight=0.2, relx=0.5, rely=0.35, anchor="center")
+        no_button.place(relwidth=0.6, relheight=0.2, relx=0.5, rely=0.6, anchor="center")
+
+        yes_button.bind("<Button-1>", lambda _: (popup.destroy(), self.restart()))
+        no_button.bind("<Button-1>", lambda _: self.destroy())
 
     def switch_grid(self):  # for pvp
         grid_refs = self.grid_refs
@@ -264,10 +272,12 @@ class Game:
 
     def start(self):
         self.menu.place()
-        self.root.mainloop()
+        self.mainloop()
 
     def restart(self):
         self.player1 = Player.from_other(self.player1)
         self.player2 = Player.from_other(self.player2)
         self.grid_refs.grid_master.place_forget()
+
+        self.menu.reset()
         self.menu.place()

@@ -26,6 +26,5 @@ class Player:
     @classmethod
     def from_other(cls, other: "Player") -> "Player":
         player = object.__new__(cls)
-        player.instance = other.instance
 
         return player
